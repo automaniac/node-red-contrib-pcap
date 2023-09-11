@@ -1,4 +1,4 @@
-node-red-contrib-pcap
+node-red-contrib-pcap fix
 =====================
 
 The *node-red-contrib-pcap* adds support to [Node-RED] for capture and decoding network packets using [libpcap].
