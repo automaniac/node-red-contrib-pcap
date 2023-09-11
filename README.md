@@ -19,9 +19,7 @@ On MacOS X, using [Homebrew]:
 
     brew install libpcap
 
-Then change to your node-red installation directory and then run:
-
-    npm install pcap
+Then change to your node-red installation sudo directory and then run:
     
     npm install https://github.com/automaniac/node-red-contrib-pcap
 
