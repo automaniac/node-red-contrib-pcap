@@ -14,10 +14,10 @@
  * limitations under the License.
  **/
 
-module.exports = function(RED) {
+module.exports = function (RED) {
     "use strict";
     var os = require('os');
-    var pcap = require('pcap2');
+    var pcap = require('pcap');
 
     function PacketCapture(n) {
         RED.nodes.createNode(this, n);
@@ -26,19 +26,19 @@ module.exports = function(RED) {
         node.output = n.output;
         node.filter = n.filter || null;
         node.path = n.path;
-        
+
         if (node.ifname) {
-            node.session = pcap.createSession(node.ifname, node.filter);
+            node.session = pcap.createSession(node.ifname, { filter: node.filter });
             node.session.on('packet', function (raw_packet) {
                 var msg = {};
                 if (node.output == "raw") {
                     msg.payload = raw_packet;
                 } else {
                     var decoded = pcap.decode.packet(raw_packet);
-                    
+
                     if (node.path) {
                         var pathParts = node.path.split(".");
-                        pathParts.reduce(function(obj, i) {
+                        pathParts.reduce(function (obj, i) {
                             decoded = (typeof obj[i] !== "undefined" ? obj[i] : undefined);
                             return decoded;
                         }, decoded);
@@ -47,7 +47,10 @@ module.exports = function(RED) {
                     if (node.output == "object") {
                         msg.payload = decoded;
                     } else if (node.output == "string") {
-                        msg.payload = String(decoded)
+                        msg.payload = '';
+                        if (decoded.payload !== null) {
+                            msg.payload = String(decoded);
+                        }
                     }
                 }
                 msg.topic = node.ifname;
@@ -55,7 +58,7 @@ module.exports = function(RED) {
             });
         }
 
-        node.on("close", function() {
+        node.on("close", function () {
             try {
                 node.session.close();
             } catch (err) {
@@ -65,12 +68,12 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType("pcap", PacketCapture);
 
-    RED.httpAdmin.get("/pcap/interfaces", function(req, res) {
+    RED.httpAdmin.get("/pcap/interfaces", function (req, res) {
         var result = {};
         var interfaces = os.networkInterfaces();
-        Object.keys(interfaces).forEach(function(ifname) {
+        Object.keys(interfaces).forEach(function (ifname) {
             var mac = 'unknown';
-            for(var key in interfaces[ifname]) {
+            for (var key in interfaces[ifname]) {
                 var address = interfaces[ifname][key];
                 if (address['mac'] && address['mac'] != '00:00:00:00:00:00') {
                     mac = address.mac;
@@ -79,7 +82,7 @@ module.exports = function(RED) {
                     mac = "Internal";
                 }
             }
-            result[ifname] = ifname + ' ('+mac+')';
+            result[ifname] = ifname + ' (' + mac + ')';
         });
 
         res.send({
